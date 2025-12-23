@@ -4,7 +4,8 @@ import { ROLES } from '../utils/roles';
 import { useAuth } from '../context/authStore';
 
 function Header() {
-    const user = useAuth.getState().user;
+    const user = useAuth((state) => state.user);
+    const logout = useAuth((state) => state.logout);
     const navigate = useNavigate();
     const links: { name: string, path: string }[] = [];
     if (user) {
@@ -27,8 +28,8 @@ function Header() {
     }
     const handleLogout = () => {
         navigate('/landing');
-       setTimeout(() => {
-           useAuth.getState().logout();
+        setTimeout(() => {
+            logout();
         }, 0);
     };
 

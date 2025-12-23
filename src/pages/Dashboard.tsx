@@ -1,5 +1,5 @@
 import { Box, Card, CardActionArea, CardContent, Container, Grid, Typography } from "@mui/material"
-import {  useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/authStore";
 import { ROLES } from "../utils/roles";
 interface CardInfo {
@@ -10,7 +10,7 @@ interface CardInfo {
 
 function Dashboard() {
     const cards: CardInfo[] = [];
-    const user= useAuth.getState().user;
+    const user = useAuth((state) => state.user);
     const navigate = useNavigate();
     if (user?.role === ROLES.ADMIN) {
         cards.push({ title: "ניהול משתמשים", description: "כאן תוכלו לנהל את המשתמשים במערכת, להוסיף משתמשים חדשים, לערוך או למחוק משתמשים קיימים.", link: "/users" });
@@ -24,7 +24,7 @@ function Dashboard() {
         cards.push({ title: "הגשת פנייה חדשה", description: "כאן תוכלו להגיש פנייה חדשה לצוות התמיכה שלנו ולקבל עזרה במהירות.", link: "/tickets/new" });
         cards.push({ title: "הצגת הפניות שלי", description: "כאן תוכלו לצפות ולעקוב אחר כל הפניות שהגשתם למערכת.", link: "/tickets" });
     }
-   return (
+    return (
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
             <Box sx={{ mb: 6, textAlign: 'center' }}>
                 <Typography variant="h3" component="h1" gutterBottom color="primary">
@@ -39,8 +39,8 @@ function Dashboard() {
                 {cards.map((card, index) => (
                     <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
                         <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-                            <CardActionArea 
-                                onClick={() => navigate(card.link)} 
+                            <CardActionArea
+                                onClick={() => navigate(card.link)}
                                 sx={{ height: '100%', p: 2, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start' }}
                             >
                                 <CardContent>
