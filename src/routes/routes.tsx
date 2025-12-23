@@ -4,7 +4,7 @@ import LoginRegister from "../pages/Login-Register";
 import { Route, Routes } from "react-router-dom";
 import Dashboard from "../pages/Dashboard";
 import Users from "../pages/Users";
-import Tickets from "../pages/Tickets"; 
+import Tickets from "../pages/Tickets";
 import AddTicket from "../pages/AddTicket";
 import Ticket from "../pages/Ticket";
 import { useAuth } from "../context/authStore";
@@ -20,7 +20,7 @@ import NotFound from "../pages/NotFound";
 import { ROLES } from "../utils/roles";
 import Unauthorized from "../pages/Unauthorized";
 function RoutesComponent() {
-    const user = useAuth.getState().user;
+    const user = useAuth((state) => state.user)
     const role = user?.role || ROLES.UNLOGGED;
     return (
         <Routes>
