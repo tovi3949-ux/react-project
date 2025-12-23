@@ -1,0 +1,21 @@
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { ThemeProvider, CssBaseline } from '@mui/material'
+import App from './App.tsx'
+import theme from './theme.ts'  
+import './index.css'
+import { BrowserRouter } from 'react-router-dom'
+import { SnackbarProvider } from 'notistack'
+
+createRoot(document.getElementById('root')!).render(
+  <BrowserRouter>
+  <SnackbarProvider>
+  <StrictMode>
+    <ThemeProvider theme={theme}>
+      <CssBaseline /> 
+      <App />
+    </ThemeProvider>
+  </StrictMode>
+  </SnackbarProvider>
+  </BrowserRouter>
+)
