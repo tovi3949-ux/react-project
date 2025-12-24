@@ -23,6 +23,7 @@ import relativeTime from 'dayjs/plugin/relativeTime';
 import utc from 'dayjs/plugin/utc';
 import 'dayjs/locale/he';
 import { useSnackbar } from "notistack";
+import { getUserById } from "../services/users";
 
 function Ticket() {
     dayjs.extend(relativeTime);
@@ -35,6 +36,7 @@ function Ticket() {
     const [loading, setLoading] = useState(true);
     const [refreshFlag, setRefreshFlag] = useState(false);
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
+    const [commentAuthorsRoles, setCommentAuthorsRoles] = useState<{ [key: number]: string }>({});
     const user = useAuth.getState().user;
     const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -42,13 +44,27 @@ function Ticket() {
     const showDelete = user && user.role === ROLES.ADMIN;
     const ableToChangePriorityAndAssignee = user && user.role === ROLES.ADMIN;
     const ableToChangeStatus = user && (user.role === ROLES.ADMIN || (user.role === ROLES.AGENT && ticket?.assigned_to === user.id));
-    const {enqueueSnackbar} = useSnackbar();
+    const { enqueueSnackbar } = useSnackbar();
     useEffect(() => {
         const fetchTicket = async () => {
             setLoading(true);
             if (!params.id) throw new Error("Ticket ID is required");
             try {
-                setTicket(await getTicketById(params.id));
+                const ticketData = await getTicketById(params.id);
+                setTicket(ticketData);
+
+                if (user?.role === ROLES.ADMIN) {
+                    const authorsRolesMap: { [key: number]: string } = {};
+                    for (const comment of ticketData.comments) {
+                        try {
+                            const author = await getUserById(comment.author_id.toString());
+                            authorsRolesMap[comment.author_id] = author.role;
+                        } catch (error) {
+                            authorsRolesMap[comment.author_id] = ROLES.CUSTOMER;
+                        }
+                    }
+                    setCommentAuthorsRoles(authorsRolesMap);
+                }
             } catch (error) {
                 enqueueSnackbar("שגיאה בטעינת הפנייה", { variant: "error" });
                 navigate("/tickets");
@@ -57,6 +73,7 @@ function Ticket() {
         };
         fetchTicket();
     }, [params.id, location.pathname, refreshFlag]);
+
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -161,62 +178,116 @@ function Ticket() {
                 )}
 
                 {ticket.comments.map((comment) => {
-                    const isMe = user && comment.author_name === user.name;
+                    if (user?.role !== ROLES.ADMIN) {
+                        const isMe = user && comment.author_name === user.name;
+                        return (
+                            <Box
+                                key={comment.id}
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: isMe ? 'flex-start' : 'flex-end',
+                                    alignItems: 'flex-end',
+                                    gap: 1
+                                }}
+                            >
+                                {isMe && (
+                                    <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                                        <PersonIcon fontSize="small" />
+                                    </Avatar>
+                                )}
 
+                                <Paper sx={{
+                                    p: 1.5,
+                                    maxWidth: '70%',
+                                    bgcolor: isMe ? '#dcf8c6' : 'white',
+                                    borderRadius: 2,
+                                    position: 'relative',
+                                    '&::before': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        bottom: 0,
+                                        [isMe ? 'right' : 'left']: -8,
+                                        width: 0,
+                                        height: 0,
+                                        borderStyle: 'solid',
+                                        borderWidth: isMe ? '0 0 10px 10px' : '0 10px 10px 0',
+                                        borderColor: isMe ? `transparent transparent #dcf8c6 transparent` : `transparent transparent white transparent`,
+                                    }
+                                }}>
+                                    {!isMe && (
+                                        <Typography variant="caption" color="secondary" fontWeight="bold">
+                                            {comment.author_name}
+                                        </Typography>
+                                    )}
+                                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                                        {comment.content}
+                                    </Typography>
+                                    <Typography variant="caption">{dayjs.utc(comment.created_at).local().fromNow()}</Typography>
+                                </Paper>
 
-
-                    return (
-                        <Box
-                            key={comment.id}
-                            sx={{
-                                display: 'flex',
-                                justifyContent: isMe ? 'flex-start' : 'flex-end',
-                                alignItems: 'flex-end',
-                                gap: 1
-                            }}
-                        >
-                            {isMe && (
-                                <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-                                    <PersonIcon fontSize="small" />
-                                </Avatar>
-                            )}
-
-                            <Paper sx={{
-                                p: 1.5,
-                                maxWidth: '70%',
-                                bgcolor: isMe ? '#dcf8c6' : 'white',
-                                borderRadius: 2,
-                                position: 'relative',
-                                '&::before': {
-                                    content: '""',
-                                    position: 'absolute',
-                                    bottom: 0,
-                                    [isMe ? 'right' : 'left']: -8,
-                                    width: 0,
-                                    height: 0,
-                                    borderStyle: 'solid',
-                                    borderWidth: isMe ? '0 0 10px 10px' : '0 10px 10px 0',
-                                    borderColor: isMe ? `transparent transparent #dcf8c6 transparent` : `transparent transparent white transparent`,
-                                }
-                            }}>
                                 {!isMe && (
+                                    <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
+                                        <SupportAgentIcon fontSize="small" />
+                                    </Avatar>
+                                )}
+                            </Box>
+                        );
+                    }
+                    else {
+                        const isCustomerAuthor = commentAuthorsRoles[comment.author_id] === ROLES.CUSTOMER;
+                        return (
+                            <Box
+                                key={comment.id}
+                                sx={{
+                                    display: 'flex',
+                                    justifyContent: isCustomerAuthor ? 'flex-start' : 'flex-end',
+                                    alignItems: 'flex-end',
+                                    gap: 1
+                                }}
+                            >
+                                {isCustomerAuthor && (
+                                    <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
+                                        <PersonIcon fontSize="small" />
+                                    </Avatar>
+                                )}
+
+                                <Paper sx={{
+                                    p: 1.5,
+                                    maxWidth: '70%',
+                                    bgcolor: isCustomerAuthor ? '#dcf8c6' : 'white',
+                                    borderRadius: 2,
+                                    position: 'relative',
+                                    '&::before': {
+                                        content: '""',
+                                        position: 'absolute',
+                                        bottom: 0,
+                                        [isCustomerAuthor ? 'right' : 'left']: -8,
+                                        width: 0,
+                                        height: 0,
+                                        borderStyle: 'solid',
+                                        borderWidth: isCustomerAuthor ? '0 0 10px 10px' : '0 10px 10px 0',
+                                        borderColor: isCustomerAuthor ? `transparent transparent #dcf8c6 transparent` : `transparent transparent white transparent`,
+                                    }
+                                }}>
+
                                     <Typography variant="caption" color="secondary" fontWeight="bold">
                                         {comment.author_name}
                                     </Typography>
-                                )}
-                                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                                    {comment.content}
-                                </Typography>
-                                <Typography variant="caption">{dayjs.utc(comment.created_at).local().fromNow()}</Typography>
-                            </Paper>
+                                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                                        {comment.content}
+                                    </Typography>
+                                    <Typography variant="caption">{dayjs.utc(comment.created_at).local().fromNow()}</Typography>
+                                </Paper>
 
-                            {!isMe && (
-                                <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
-                                    <SupportAgentIcon fontSize="small" />
-                                </Avatar>
-                            )}
-                        </Box>
-                    );
+                                {!isCustomerAuthor && (
+                                    <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
+                                        <SupportAgentIcon fontSize="small" />
+                                    </Avatar>
+                                )}
+                            </Box>
+                        );
+                    }
+
                 })}
                 <div ref={bottomRef} />
             </Box>
