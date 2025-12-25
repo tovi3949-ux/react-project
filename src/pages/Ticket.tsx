@@ -40,10 +40,9 @@ function Ticket() {
     const user = useAuth.getState().user;
     const bottomRef = useRef<HTMLDivElement>(null);
 
-    const showAddComment = user && (user.role === ROLES.CUSTOMER || (user.role === ROLES.AGENT && ticket?.assigned_to === user.id));
-    const showDelete = user && user.role === ROLES.ADMIN;
-    const ableToChangePriorityAndAssignee = user && user.role === ROLES.ADMIN;
-    const ableToChangeStatus = user && (user.role === ROLES.ADMIN || (user.role === ROLES.AGENT && ticket?.assigned_to === user.id));
+    const isAdmin = user?.role === ROLES.ADMIN;
+    const isAgent = user?.role === ROLES.AGENT&&ticket?.assigned_to === user.id;
+    const isCustomer = user?.role === ROLES.CUSTOMER;
     const { enqueueSnackbar } = useSnackbar();
     useEffect(() => {
         const fetchTicket = async () => {
@@ -119,7 +118,7 @@ function Ticket() {
                             {ticket.subject}
                         </Typography>
                     </Box>
-                    {showDelete && (
+                    {isAdmin && (
                         <Tooltip title="מחק פנייה">
                             <IconButton color="error" onClick={handleOpenDeleteDialog}>
                                 <DeleteIcon />
@@ -140,11 +139,17 @@ function Ticket() {
                     <Grid></Grid>
 
                     <Grid sx={{ display: 'flex', gap: 1 }}>
-                        {ableToChangeStatus && <ChangeTicketStatus ticketId={ticket.id.toString()} onAdd={handleRefresh} />}
-                        {ableToChangePriorityAndAssignee && <ChangeTicketPriority ticketId={ticket.id.toString()} onAdd={handleRefresh} />}
-                        {ableToChangePriorityAndAssignee && <ChangeTicketAssignee ticketId={ticket.id.toString()} onAdd={handleRefresh} />}
+                        {isAdmin|| isAgent &&  <ChangeTicketStatus ticketId={ticket.id.toString()} onAdd={handleRefresh} />}
+                        {isAdmin && <ChangeTicketPriority ticketId={ticket.id.toString()} onAdd={handleRefresh} />}
+                        {isAdmin && <ChangeTicketAssignee ticketId={ticket.id.toString()} onAdd={handleRefresh} />}
                     </Grid>
                 </Grid>
+                {(isAdmin||isAgent) && <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                    נוצר על ידי: {ticket.created_by_name}
+                </Typography>}
+               {(isAdmin||isCustomer) && <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+                    מטופל על ידי: {ticket.assigned_to_name || 'לא מוקצה'}
+                </Typography> }
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                     נוצר ב: {dayjs(ticket.created_at).format('DD/MM/YYYY HH:mm')}
                 </Typography>
@@ -292,7 +297,7 @@ function Ticket() {
                 <div ref={bottomRef} />
             </Box>
 
-            {showAddComment && (
+            {(isCustomer||isAgent) && (
                 <Paper elevation={3} sx={{ p: 1, borderRadius: 2 }}>
                     <AddComment id={ticket.id.toString()} onAdd={handleRefresh} />
                 </Paper>

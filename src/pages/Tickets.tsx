@@ -74,7 +74,7 @@ function Tickets() {
             ) : (
                 <Grid container spacing={3}>
                     {tickets.map((ticket) => (
-                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={ticket.id}>                                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', transition: '0.3s', '&:hover': { transform: 'translateY(-4px)' }, position: 'relative' }}>
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }} key={ticket.id} style={{opacity: ticket.status_name === 'closed' ? 0.5 : 1}}>                                <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', transition: '0.3s', '&:hover': { transform: 'translateY(-4px)' }, position: 'relative' }}>
                             {((user?.role == ROLES.ADMIN && ticket.assigned_to == undefined) || (user?.role == ROLES.AGENT && waitingTickets.has(ticket.id))) && <Tooltip title={title} placement="top">
                                 <Box
                                     sx={{

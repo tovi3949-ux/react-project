@@ -42,7 +42,7 @@ function Users() {
                     color="secondary" 
                     component={Link} 
                     to="/add-user"
-                    startIcon={<PersonAddIcon />} // אם יש לך אייקונים
+                    startIcon={<PersonAddIcon />} 
                 >
                     הוספת משתמש
                 </Button>
@@ -73,6 +73,7 @@ function Users() {
                                             color={user.role === ROLES.ADMIN ? 'secondary' : user.role === ROLES.AGENT ? 'primary' : 'default'} 
                                             size="small" 
                                             variant="outlined"
+                                            style={{ opacity: user.is_active ? 1 : 0.5 }}
                                         />
                                     </TableCell>
                                 </TableRow>
